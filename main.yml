@@ -1,0 +1,37 @@
+---
+  - name: Allow 8080 in iptables
+    iptables:
+      chain: INPUT
+      protocol: tcp
+      match: tcp
+      destination_port: "8080"
+      jump: ACCEPT
+
+  - name: Install package
+    apt:
+      name: tomcat6
+      update_cache: yes
+      state: present
+  
+
+  - name: Create App directory
+    file:
+      path: /var/lib/tomcat6/webapps/{{ app_name }}
+      state: directory
+      mode: 0755
+
+  - name: Copy index.jsp
+    template:
+      src: index.jsp.j2
+      dest: /var/lib/tomcat7/webapps/{{ app_name }}/index.jsp
+    notify: restart tomcat
+
+  - name: Copy additional files
+    copy:
+      src: "{{ item.src }}"
+      dest: "{{ item.dest }}"
+    with_items:
+      - { src: "WEB-INF", dest: "/var/lib/tomcat7/webapps/{{ app_name }}" }
+      - { src: "setenv.sh", dest: "/usr/share/tomcat7/bin/setenv.sh" }
+    notify: restart tomcat
+
